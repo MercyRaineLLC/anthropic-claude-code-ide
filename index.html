@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Freight Margin Calculator</title>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Freight Margin Calculator</h1>
+        <p>Calculate walkaway and goal prices from shipper charges.</p>
+      </header>
+
+      <section class="card">
+        <form id="calc-form">
+          <label for="brokerName">Broker Name</label>
+          <input id="brokerName" name="brokerName" type="text" required placeholder="e.g. Jane Doe" />
+
+          <label for="shipperCharge">Shipper Charge ($)</label>
+          <input id="shipperCharge" name="shipperCharge" type="number" min="0" step="0.01" required placeholder="0.00" />
+
+          <button type="submit">Calculate + Log</button>
+        </form>
+
+        <div class="results" id="results" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <div class="log-header">
+          <h2>Saved Quotes</h2>
+          <div class="actions">
+            <button id="exportCsv" type="button">Export CSV</button>
+            <button id="clearLogs" type="button" class="danger">Clear Logs</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Broker</th>
+                <th>Shipper Charge</th>
+                <th>15% Walkaway</th>
+                <th>20% Goal</th>
+                <th>25% Goal</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card tips">
+        <h2>Useful Add-on Features</h2>
+        <ul>
+          <li>Per-customer notes and lane tags for analysis.</li>
+          <li>Daily/weekly margin dashboard for management.</li>
+          <li>Role-based admin login with cloud backups.</li>
+          <li>Rate trend charting by lane and equipment type.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

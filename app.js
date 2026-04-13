@@ -65,6 +65,8 @@ function renderTable() {
         <td>${currency.format(entry.shipperCharge)}</td>
         <td>${currency.format(entry.walkaway20)}</td>
         <td>${currency.format(entry.goal225)}</td>
+        <td>${currency.format(entry.walkaway15)}</td>
+        <td>${currency.format(entry.goal20)}</td>
         <td>${currency.format(entry.goal25)}</td>
       `;
       tbody.appendChild(tr);
@@ -79,12 +81,15 @@ function exportToCsv() {
   }
 
   const headers = ['created_at', 'broker_name', 'shipper_charge', 'walkaway_20', 'goal_22_5', 'goal_25'];
+  const headers = ['created_at', 'broker_name', 'shipper_charge', 'walkaway_15', 'goal_20', 'goal_25'];
   const rows = logs.map((entry) => [
     entry.createdAt,
     entry.brokerName,
     entry.shipperCharge,
     entry.walkaway20,
     entry.goal225,
+    entry.walkaway15,
+    entry.goal20,
     entry.goal25
   ]);
 

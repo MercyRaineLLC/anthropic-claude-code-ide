@@ -4,8 +4,8 @@ A lightweight Progressive Web App (PWA) for freight brokers to:
 
 - Enter the shipper charge.
 - Automatically calculate:
-  - 15% margin walkaway price
-  - 20% margin goal price
+  - 20% margin walkaway price
+  - 22.5% margin goal price
   - 25% margin goal price
 - Save each quote with broker name + timestamp.
 - Export logs as CSV for admin retrieval.

@@ -13,8 +13,8 @@ const currency = new Intl.NumberFormat('en-US', {
 
 function computeTargets(shipperCharge) {
   return {
-    walkaway15: shipperCharge * 0.85,
-    goal20: shipperCharge * 0.8,
+    walkaway20: shipperCharge * 0.8,
+    goal225: shipperCharge * 0.775,
     goal25: shipperCharge * 0.75
   };
 }
@@ -35,12 +35,12 @@ function renderResults(entry) {
         <span class="metric-value">${currency.format(entry.shipperCharge)}</span>
       </div>
       <div class="metric">
-        <span class="metric-label">15% Walkaway</span>
-        <span class="metric-value">${currency.format(entry.walkaway15)}</span>
+        <span class="metric-label">20% Walkaway</span>
+        <span class="metric-value">${currency.format(entry.walkaway20)}</span>
       </div>
       <div class="metric">
-        <span class="metric-label">20% Goal</span>
-        <span class="metric-value">${currency.format(entry.goal20)}</span>
+        <span class="metric-label">22.5% Goal</span>
+        <span class="metric-value">${currency.format(entry.goal225)}</span>
       </div>
       <div class="metric">
         <span class="metric-label">25% Goal</span>
@@ -63,6 +63,8 @@ function renderTable() {
         <td>${new Date(entry.createdAt).toLocaleString()}</td>
         <td>${entry.brokerName}</td>
         <td>${currency.format(entry.shipperCharge)}</td>
+        <td>${currency.format(entry.walkaway20)}</td>
+        <td>${currency.format(entry.goal225)}</td>
         <td>${currency.format(entry.walkaway15)}</td>
         <td>${currency.format(entry.goal20)}</td>
         <td>${currency.format(entry.goal25)}</td>
@@ -78,11 +80,14 @@ function exportToCsv() {
     return;
   }
 
+  const headers = ['created_at', 'broker_name', 'shipper_charge', 'walkaway_20', 'goal_22_5', 'goal_25'];
   const headers = ['created_at', 'broker_name', 'shipper_charge', 'walkaway_15', 'goal_20', 'goal_25'];
   const rows = logs.map((entry) => [
     entry.createdAt,
     entry.brokerName,
     entry.shipperCharge,
+    entry.walkaway20,
+    entry.goal225,
     entry.walkaway15,
     entry.goal20,
     entry.goal25

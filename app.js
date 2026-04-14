@@ -11,11 +11,53 @@ const currency = new Intl.NumberFormat('en-US', {
   currency: 'USD'
 });
 
-function computeTargets(shipperCharge) {
+function toNumberOrNull(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function formatCurrencyOrDash(value) {
+  return typeof value === 'number' ? currency.format(value) : '—';
+}
+
+function formatPercentOrDash(value) {
+  return typeof value === 'number' ? `${value.toFixed(2)}%` : '—';
+}
+
+function computeCarrierTargetsFromShipper(shipperCharge) {
   return {
     walkaway20: shipperCharge * 0.8,
     goal225: shipperCharge * 0.775,
     goal25: shipperCharge * 0.75
+  };
+}
+
+function computeShipperTargetsFromCarrier(carrierPrice) {
+  return {
+    sellFor20: carrierPrice / 0.8,
+    sellFor225: carrierPrice / 0.775,
+    sellFor25: carrierPrice / 0.75
+  };
+}
+
+function computeQuoteMetrics(shipperCharge, carrierPrice) {
+  if (typeof shipperCharge !== 'number' || typeof carrierPrice !== 'number') {
+    return {
+      grossProfit: null,
+      marginPct: null
+    };
+  }
+
+  const grossProfit = shipperCharge - carrierPrice;
+  const marginPct = shipperCharge > 0 ? (grossProfit / shipperCharge) * 100 : null;
+
+  return {
+    grossProfit,
+    marginPct
   };
 }
 
@@ -27,25 +69,103 @@ function writeLogs(logs) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
 
+function normalizeEntry(entry) {
+  const shipperCharge = toNumberOrNull(entry.shipperCharge);
+  const carrierPrice = toNumberOrNull(entry.carrierPrice);
+
+  const buyTargets = typeof shipperCharge === 'number'
+    ? computeCarrierTargetsFromShipper(shipperCharge)
+    : {
+        walkaway20: null,
+        goal225: null,
+        goal25: null
+      };
+
+  const sellTargets = typeof carrierPrice === 'number'
+    ? computeShipperTargetsFromCarrier(carrierPrice)
+    : {
+        sellFor20: null,
+        sellFor225: null,
+        sellFor25: null
+      };
+
+  const quoteMetrics = computeQuoteMetrics(shipperCharge, carrierPrice);
+
+  return {
+    brokerName: entry.brokerName || '',
+    shipperCharge,
+    carrierPrice,
+    ...buyTargets,
+    ...sellTargets,
+    ...quoteMetrics,
+    createdAt: entry.createdAt || new Date().toISOString()
+  };
+}
+
 function renderResults(entry) {
+  const hasShipper = typeof entry.shipperCharge === 'number';
+  const hasCarrier = typeof entry.carrierPrice === 'number';
+
   results.innerHTML = `
-    <div class="results-grid">
-      <div class="metric">
-        <span class="metric-label">Shipper Charge</span>
-        <span class="metric-value">${currency.format(entry.shipperCharge)}</span>
+    <div class="results-section">
+      <h3>Current Quote</h3>
+      <div class="results-grid">
+        <div class="metric">
+          <span class="metric-label">Shipper Charge</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.shipperCharge)}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Carrier Price</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.carrierPrice)}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Gross Profit</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.grossProfit)}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Actual Margin</span>
+          <span class="metric-value">${formatPercentOrDash(entry.marginPct)}</span>
+        </div>
       </div>
-      <div class="metric">
-        <span class="metric-label">20% Walkaway</span>
-        <span class="metric-value">${currency.format(entry.walkaway20)}</span>
+    </div>
+    <div class="results-section">
+      <h3>Carrier Target From Shipper</h3>
+      <div class="results-grid">
+        <div class="metric">
+          <span class="metric-label">20% Walkaway</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.walkaway20)}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">22.5% Goal</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.goal225)}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">25% Goal</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.goal25)}</span>
+        </div>
       </div>
-      <div class="metric">
-        <span class="metric-label">22.5% Goal</span>
-        <span class="metric-value">${currency.format(entry.goal225)}</span>
+      ${hasShipper ? '' : '<p class="hint">Enter a shipper charge to calculate these targets.</p>'}
+    </div>
+    <div class="results-section">
+      <h3>Suggested Shipper Charge From Carrier</h3>
+      <div class="results-grid">
+        <div class="metric">
+          <span class="metric-label">Sell for 20%</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.sellFor20)}</span>
+          ${hasCarrier ? '<button class="metric-action" type="button" data-fill-shipper="sellFor20">Use This</button>' : ''}
+        </div>
+        <div class="metric">
+          <span class="metric-label">Sell for 22.5%</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.sellFor225)}</span>
+          ${hasCarrier ? '<button class="metric-action" type="button" data-fill-shipper="sellFor225">Use This</button>' : ''}
+        </div>
+        <div class="metric">
+          <span class="metric-label">Sell for 25%</span>
+          <span class="metric-value">${formatCurrencyOrDash(entry.sellFor25)}</span>
+          ${hasCarrier ? '<button class="metric-action" type="button" data-fill-shipper="sellFor25">Use This</button>' : ''}
+        </div>
       </div>
-      <div class="metric">
-        <span class="metric-label">25% Goal</span>
-        <span class="metric-value">${currency.format(entry.goal25)}</span>
-      </div>
+      ${hasCarrier ? '' : '<p class="hint">Enter a carrier price to get suggested shipper charges.</p>'}
     </div>
   `;
 }
@@ -57,17 +177,22 @@ function renderTable() {
   logs
     .slice()
     .reverse()
-    .forEach((entry) => {
+    .forEach((storedEntry) => {
+      const entry = normalizeEntry(storedEntry);
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${new Date(entry.createdAt).toLocaleString()}</td>
-        <td>${entry.brokerName}</td>
-        <td>${currency.format(entry.shipperCharge)}</td>
-        <td>${currency.format(entry.walkaway20)}</td>
-        <td>${currency.format(entry.goal225)}</td>
-        <td>${currency.format(entry.walkaway15)}</td>
-        <td>${currency.format(entry.goal20)}</td>
-        <td>${currency.format(entry.goal25)}</td>
+        <td>${entry.brokerName || '—'}</td>
+        <td>${formatCurrencyOrDash(entry.carrierPrice)}</td>
+        <td>${formatCurrencyOrDash(entry.shipperCharge)}</td>
+        <td>${formatCurrencyOrDash(entry.grossProfit)}</td>
+        <td>${formatPercentOrDash(entry.marginPct)}</td>
+        <td>${formatCurrencyOrDash(entry.walkaway20)}</td>
+        <td>${formatCurrencyOrDash(entry.goal225)}</td>
+        <td>${formatCurrencyOrDash(entry.goal25)}</td>
+        <td>${formatCurrencyOrDash(entry.sellFor20)}</td>
+        <td>${formatCurrencyOrDash(entry.sellFor225)}</td>
+        <td>${formatCurrencyOrDash(entry.sellFor25)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -80,21 +205,41 @@ function exportToCsv() {
     return;
   }
 
-  const headers = ['created_at', 'broker_name', 'shipper_charge', 'walkaway_20', 'goal_22_5', 'goal_25'];
-  const headers = ['created_at', 'broker_name', 'shipper_charge', 'walkaway_15', 'goal_20', 'goal_25'];
-  const rows = logs.map((entry) => [
-    entry.createdAt,
-    entry.brokerName,
-    entry.shipperCharge,
-    entry.walkaway20,
-    entry.goal225,
-    entry.walkaway15,
-    entry.goal20,
-    entry.goal25
-  ]);
+  const headers = [
+    'created_at',
+    'broker_name',
+    'carrier_price',
+    'shipper_charge',
+    'gross_profit',
+    'margin_pct',
+    'walkaway_20',
+    'goal_22_5',
+    'goal_25',
+    'sell_for_20',
+    'sell_for_22_5',
+    'sell_for_25'
+  ];
+
+  const rows = logs.map((storedEntry) => {
+    const entry = normalizeEntry(storedEntry);
+    return [
+      entry.createdAt,
+      entry.brokerName,
+      entry.carrierPrice,
+      entry.shipperCharge,
+      entry.grossProfit,
+      entry.marginPct,
+      entry.walkaway20,
+      entry.goal225,
+      entry.goal25,
+      entry.sellFor20,
+      entry.sellFor225,
+      entry.sellFor25
+    ];
+  });
 
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+    .map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(','))
     .join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -112,20 +257,35 @@ form.addEventListener('submit', (event) => {
   event.preventDefault();
 
   const brokerName = form.brokerName.value.trim();
-  const shipperCharge = Number(form.shipperCharge.value);
+  const shipperCharge = toNumberOrNull(form.shipperCharge.value);
+  const carrierPrice = toNumberOrNull(form.carrierPrice.value);
 
-  if (!brokerName || Number.isNaN(shipperCharge) || shipperCharge < 0) {
-    alert('Please enter a valid broker name and a non-negative shipper charge.');
+  if (!brokerName) {
+    alert('Please enter a broker name.');
     return;
   }
 
-  const targets = computeTargets(shipperCharge);
-  const entry = {
+  if (shipperCharge !== null && shipperCharge < 0) {
+    alert('Shipper charge must be a non-negative number.');
+    return;
+  }
+
+  if (carrierPrice !== null && carrierPrice < 0) {
+    alert('Carrier price must be a non-negative number.');
+    return;
+  }
+
+  if (shipperCharge === null && carrierPrice === null) {
+    alert('Enter at least a shipper charge or carrier price to calculate.');
+    return;
+  }
+
+  const entry = normalizeEntry({
     brokerName,
     shipperCharge,
-    ...targets,
+    carrierPrice,
     createdAt: new Date().toISOString()
-  };
+  });
 
   const logs = readLogs();
   logs.push(entry);
@@ -135,6 +295,34 @@ form.addEventListener('submit', (event) => {
   renderTable();
   form.reset();
   form.brokerName.focus();
+});
+
+results.addEventListener('click', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const fillKey = target.dataset.fillShipper;
+  if (!fillKey) {
+    return;
+  }
+
+  const carrierPrice = toNumberOrNull(form.carrierPrice.value);
+  if (carrierPrice === null) {
+    alert('Enter a carrier price first.');
+    form.carrierPrice.focus();
+    return;
+  }
+
+  const sellTargets = computeShipperTargetsFromCarrier(carrierPrice);
+  const value = sellTargets[fillKey];
+  if (typeof value !== 'number') {
+    return;
+  }
+
+  form.shipperCharge.value = value.toFixed(2);
+  form.shipperCharge.focus();
 });
 
 clearBtn.addEventListener('click', () => {
@@ -158,5 +346,5 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-results.textContent = 'Enter a shipper charge and save your first quote.';
+results.textContent = 'Enter broker name and at least one price to calculate targets.';
 renderTable();

@@ -12,7 +12,7 @@
     <main class="container">
       <header>
         <h1>Freight Margin Calculator</h1>
-        <p>Calculate walkaway and goal prices from shipper charges.</p>
+        <p>Calculate carrier targets, shipper sell targets, and live margin/profit checks.</p>
       </header>
 
       <section class="card">
@@ -20,8 +20,11 @@
           <label for="brokerName">Broker Name</label>
           <input id="brokerName" name="brokerName" type="text" required placeholder="e.g. Jane Doe" />
 
+          <label for="carrierPrice">Carrier Price ($)</label>
+          <input id="carrierPrice" name="carrierPrice" type="number" min="0" step="0.01" placeholder="0.00" />
+
           <label for="shipperCharge">Shipper Charge ($)</label>
-          <input id="shipperCharge" name="shipperCharge" type="number" min="0" step="0.01" required placeholder="0.00" />
+          <input id="shipperCharge" name="shipperCharge" type="number" min="0" step="0.01" placeholder="0.00" />
 
           <button type="submit">Calculate + Log</button>
         </form>
@@ -43,27 +46,21 @@
               <tr>
                 <th>Date</th>
                 <th>Broker</th>
+                <th>Carrier Price</th>
                 <th>Shipper Charge</th>
+                <th>Gross Profit</th>
+                <th>Margin %</th>
                 <th>20% Walkaway</th>
                 <th>22.5% Goal</th>
-                <th>15% Walkaway</th>
-                <th>20% Goal</th>
                 <th>25% Goal</th>
+                <th>Sell for 20%</th>
+                <th>Sell for 22.5%</th>
+                <th>Sell for 25%</th>
               </tr>
             </thead>
             <tbody id="logTableBody"></tbody>
           </table>
         </div>
-      </section>
-
-      <section class="card tips">
-        <h2>Useful Add-on Features</h2>
-        <ul>
-          <li>Per-customer notes and lane tags for analysis.</li>
-          <li>Daily/weekly margin dashboard for management.</li>
-          <li>Role-based admin login with cloud backups.</li>
-          <li>Rate trend charting by lane and equipment type.</li>
-        </ul>
       </section>
     </main>
 
